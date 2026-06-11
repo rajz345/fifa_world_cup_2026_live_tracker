@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FIFA World Cup 2026 Tracker | Live Schedule & Scores in IST</title>
+    <meta name="description" content="Track FIFA World Cup 2026 matches in Indian Standard Time (IST). Live scores, group standings, knockout bracket, and match reminders.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Animated Background -->
+    <div class="bg-animation">
+        <div class="bg-orb bg-orb-1"></div>
+        <div class="bg-orb bg-orb-2"></div>
+        <div class="bg-orb bg-orb-3"></div>
+    </div>
+
+    <!-- Header -->
+    <header id="header">
+        <div class="header-content">
+            <div class="logo-section">
+                <div class="logo-icon">⚽</div>
+                <div class="logo-text">
+                    <h1>FIFA World Cup 2026</h1>
+                    <p class="subtitle">🇺🇸 🇨🇦 🇲🇽 USA • Canada • Mexico</p>
+                </div>
+            </div>
+            <div class="header-info">
+                <div class="ist-clock" id="istClock">
+                    <span class="clock-label">IST</span>
+                    <span class="clock-time" id="clockTime">--:--:--</span>
+                </div>
+                <div class="tournament-status" id="tournamentStatus">
+                    <span class="status-dot"></span>
+                    <span class="status-text">LIVE</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Navigation -->
+    <nav id="mainNav">
+        <div class="nav-content">
+            <button class="nav-btn active" data-tab="schedule" id="nav-schedule">
+                <span class="nav-icon">📅</span>
+                <span class="nav-label">Schedule</span>
+            </button>
+            <button class="nav-btn" data-tab="groups" id="nav-groups">
+                <span class="nav-icon">🏆</span>
+                <span class="nav-label">Groups</span>
+            </button>
+            <button class="nav-btn" data-tab="knockout" id="nav-knockout">
+                <span class="nav-icon">⚔️</span>
+                <span class="nav-label">Knockout</span>
+            </button>
+            <button class="nav-btn" data-tab="reminders" id="nav-reminders">
+                <span class="nav-icon">🔔</span>
+                <span class="nav-label">Reminders</span>
+                <span class="reminder-badge" id="reminderBadge" style="display:none;">0</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main id="mainContent">
+
+
+        <!-- Schedule Tab -->
+        <section class="tab-content active" id="tab-schedule">
+            <div class="section-header">
+                <h2>Match Schedule <span class="ist-tag">🇮🇳 IST</span></h2>
+                <div class="filter-bar">
+                    <div class="filter-group">
+                        <label for="filterStage">Stage:</label>
+                        <select id="filterStage">
+                            <option value="all">All Stages</option>
+                            <option value="group">Group Stage</option>
+                            <option value="round32">Round of 32</option>
+                            <option value="round16">Round of 16</option>
+                            <option value="quarter">Quarterfinals</option>
+                            <option value="semi">Semifinals</option>
+                            <option value="third">3rd Place</option>
+                            <option value="final">Final</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="filterGroup">Group:</label>
+                        <select id="filterGroup">
+                            <option value="all">All Groups</option>
+                            <option value="A">Group A</option>
+                            <option value="B">Group B</option>
+                            <option value="C">Group C</option>
+                            <option value="D">Group D</option>
+                            <option value="E">Group E</option>
+                            <option value="F">Group F</option>
+                            <option value="G">Group G</option>
+                            <option value="H">Group H</option>
+                            <option value="I">Group I</option>
+                            <option value="J">Group J</option>
+                            <option value="K">Group K</option>
+                            <option value="L">Group L</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="filterDate">Date:</label>
+                        <select id="filterDate">
+                            <option value="all">All Dates</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="filterTeam">Team:</label>
+                        <select id="filterTeam">
+                            <option value="all">All Teams</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="schedule-container" id="scheduleContainer">
+                <!-- Matches rendered by JS -->
+            </div>
+        </section>
+
+        <!-- Groups Tab -->
+        <section class="tab-content" id="tab-groups">
+            <div class="section-header">
+                <h2>Group Standings</h2>
+                <p class="section-desc">Top 2 from each group + 8 best 3rd-placed teams advance to Round of 32</p>
+            </div>
+            <div class="groups-grid" id="groupsGrid">
+                <!-- Groups rendered by JS -->
+            </div>
+        </section>
+
+        <!-- Knockout Tab -->
+        <section class="tab-content" id="tab-knockout">
+            <div class="section-header">
+                <h2>Knockout Stage</h2>
+                <p class="section-desc">Single elimination from Round of 32 to the Final</p>
+            </div>
+            <div class="knockout-container" id="knockoutContainer">
+                <div class="knockout-stage" id="knockoutRound32">
+                    <h3 class="stage-title">Round of 32</h3>
+                    <div class="knockout-matches" id="r32Matches"></div>
+                </div>
+                <div class="knockout-stage" id="knockoutRound16">
+                    <h3 class="stage-title">Round of 16</h3>
+                    <div class="knockout-matches" id="r16Matches"></div>
+                </div>
+                <div class="knockout-stage" id="knockoutQuarter">
+                    <h3 class="stage-title">Quarterfinals</h3>
+                    <div class="knockout-matches" id="qfMatches"></div>
+                </div>
+                <div class="knockout-stage" id="knockoutSemi">
+                    <h3 class="stage-title">Semifinals</h3>
+                    <div class="knockout-matches" id="sfMatches"></div>
+                </div>
+                <div class="knockout-stage" id="knockoutThird">
+                    <h3 class="stage-title">3rd Place Match</h3>
+                    <div class="knockout-matches" id="thirdMatch"></div>
+                </div>
+                <div class="knockout-stage" id="knockoutFinal">
+                    <h3 class="stage-title">🏆 Final</h3>
+                    <div class="knockout-matches" id="finalMatch"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Reminders Tab -->
+        <section class="tab-content" id="tab-reminders">
+            <div class="section-header">
+                <h2>🔔 Match Reminders</h2>
+                <p class="section-desc">Get notified before your favorite matches start</p>
+            </div>
+            <div class="reminders-info" id="remindersInfo">
+                <div class="reminder-permission" id="reminderPermission">
+                    <div class="permission-icon">🔔</div>
+                    <h3>Enable Notifications</h3>
+                    <p>Allow browser notifications to receive match reminders</p>
+                    <button class="btn-primary" id="enableNotifications" onclick="requestNotificationPermission()">Enable Notifications</button>
+                </div>
+            </div>
+            <div class="reminders-list" id="remindersList">
+                <!-- Reminders rendered by JS -->
+            </div>
+            <div class="no-reminders" id="noReminders" style="display:none;">
+                <div class="empty-icon">📭</div>
+                <h3>No Reminders Set</h3>
+                <p>Go to the Schedule tab and click the 🔔 bell icon on any match to set a reminder</p>
+            </div>
+        </section>
+    </main>
+
+    <!-- Score Update Modal -->
+    <div class="modal-overlay" id="scoreModal" style="display:none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">Update Score</h3>
+                <button class="modal-close" onclick="closeScoreModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="score-input-group">
+                    <div class="score-team">
+                        <span class="score-flag" id="modalFlag1"></span>
+                        <span class="score-team-name" id="modalTeam1">Team 1</span>
+                        <input type="number" class="score-input" id="modalScore1" min="0" value="0">
+                    </div>
+                    <div class="score-vs">VS</div>
+                    <div class="score-team">
+                        <span class="score-flag" id="modalFlag2"></span>
+                        <span class="score-team-name" id="modalTeam2">Team 2</span>
+                        <input type="number" class="score-input" id="modalScore2" min="0" value="0">
+                    </div>
+                </div>
+                <div class="match-status-group">
+                    <label for="modalStatus">Match Status:</label>
+                    <select id="modalStatus">
+                        <option value="scheduled">Scheduled</option>
+                        <option value="live">Live</option>
+                        <option value="completed">Completed</option>
+                    </select>
+                </div>
+                <div class="match-status-group" id="advancingTeamGroup" style="display:none; margin-top: 15px;">
+                    <label for="modalAdvancing">Tie-breaker Winner (ET/Penalties):</label>
+                    <select id="modalAdvancing">
+                        <!-- Options filled dynamically in JS -->
+                    </select>
+                </div>
+
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closeScoreModal()">Cancel</button>
+                <button class="btn-primary" onclick="saveScore()">Save Score</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast" id="toast" style="display:none;">
+        <span class="toast-icon">✅</span>
+        <span class="toast-message" id="toastMessage">Action completed!</span>
+    </div>
+
+    <footer>
+        <p>FIFA World Cup 2026™ Tracker • All times in IST (UTC+5:30) • Click scores to update</p>
+    </footer>
+
+    <script src="data.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
