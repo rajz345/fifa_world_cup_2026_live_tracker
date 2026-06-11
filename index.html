@@ -61,6 +61,14 @@
                 <span class="nav-label">Reminders</span>
                 <span class="reminder-badge" id="reminderBadge" style="display:none;">0</span>
             </button>
+            <button class="nav-btn" data-tab="statistics" id="nav-statistics">
+                <span class="nav-icon">📊</span>
+                <span class="nav-label">Statistics</span>
+            </button>
+            <button class="nav-btn admin-btn" id="btnAdminAuth" onclick="toggleAdminMode()">
+                <span class="nav-icon" id="adminIcon">🔒</span>
+                <span class="nav-label" id="adminLabel">Admin Mode</span>
+            </button>
         </div>
     </nav>
 
@@ -191,7 +199,78 @@
                 <p>Go to the Schedule tab and click the 🔔 bell icon on any match to set a reminder</p>
             </div>
         </section>
+
+        <!-- Statistics Tab -->
+        <section class="tab-content" id="tab-statistics">
+            <div class="section-header">
+                <h2>📊 Tournament Statistics</h2>
+                <p class="section-desc">Track team performance throughout the tournament</p>
+            </div>
+            
+            <div class="stats-grid">
+                <!-- Top Attack -->
+                <div class="stats-card">
+                    <h3>⚽ Top Scoring Teams</h3>
+                    <div class="table-container">
+                        <table class="stats-table">
+                            <thead>
+                                <tr>
+                                    <th>Rank</th>
+                                    <th>Team</th>
+                                    <th>Goals Scored</th>
+                                </tr>
+                            </thead>
+                            <tbody id="topAttackBody">
+                                <!-- Dynamic -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <!-- Best Defense -->
+                <div class="stats-card">
+                    <h3>🛡️ Best Defending Teams</h3>
+                    <div class="table-container">
+                        <table class="stats-table">
+                            <thead>
+                                <tr>
+                                    <th>Rank</th>
+                                    <th>Team</th>
+                                    <th>Goals Conceded</th>
+                                </tr>
+                            </thead>
+                            <tbody id="bestDefenseBody">
+                                <!-- Dynamic -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
     </main>
+
+    <!-- Admin Login Modal -->
+    <div class="modal-overlay" id="adminLoginModal" style="display:none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Admin Authentication</h3>
+                <button class="modal-close" onclick="closeAdminLoginModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div style="margin-bottom: 20px;">
+                    <label for="adminPasswordInput" style="display: block; margin-bottom: 8px; color: var(--text-secondary); font-size: 0.85rem;">Enter Admin Password:</label>
+                    <input type="password" id="adminPasswordInput" placeholder="Password" style="width: 100%; padding: 10px 14px; background: rgba(0, 0, 0, 0.2); border: 1px solid var(--border-glass); border-radius: var(--radius); color: var(--text-primary); font-family: inherit; font-size: 0.9rem;" />
+                </div>
+                <div id="adminLoginError" style="color: var(--accent-red); font-size: 0.8rem; margin-top: -10px; margin-bottom: 15px; display: none;">❌ Incorrect password!</div>
+            </div>
+            <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 12px;">
+                <button class="btn-secondary" onclick="closeAdminLoginModal()" style="background: rgba(255,255,255,0.05); border: 1px solid var(--border-glass); color: var(--text-primary); padding: 8px 16px; border-radius: var(--radius); cursor: pointer;">Cancel</button>
+                <button class="btn-primary" onclick="submitAdminPassword()" style="background: var(--accent-cyan); border: none; color: #0f172a; font-weight: 700; padding: 8px 20px; border-radius: var(--radius); cursor: pointer;">Login</button>
+            </div>
+        </div>
+    </div>
+
+
 
     <!-- Score Update Modal -->
     <div class="modal-overlay" id="scoreModal" style="display:none;">

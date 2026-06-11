@@ -4,6 +4,75 @@
 let matchScores = JSON.parse(localStorage.getItem('fifaScores') || '{}');
 let reminders = JSON.parse(localStorage.getItem('fifaReminders') || '[]');
 let currentEditMatch = null;
+let isAdmin = sessionStorage.getItem('isAdmin') === 'true';
+
+function updateAdminUI() {
+    const btn = document.getElementById('btnAdminAuth');
+    const label = document.getElementById('adminLabel');
+    const icon = document.getElementById('adminIcon');
+    if (!btn || !label || !icon) return;
+    if (isAdmin) {
+        btn.classList.add('admin-active');
+        label.innerText = 'Admin: Logout';
+        icon.innerText = '🔓';
+    } else {
+        btn.classList.remove('admin-active');
+        label.innerText = 'Admin Mode';
+        icon.innerText = '🔒';
+    }
+}
+
+function toggleAdminMode() {
+    if (isAdmin) {
+        isAdmin = false;
+        sessionStorage.removeItem('isAdmin');
+        updateAdminUI();
+        showToast('Logged out of Admin Mode.');
+    } else {
+        document.getElementById('adminPasswordInput').value = '';
+        document.getElementById('adminLoginError').style.display = 'none';
+        document.getElementById('adminLoginModal').style.display = 'flex';
+        document.getElementById('adminPasswordInput').focus();
+    }
+}
+
+function closeAdminLoginModal() {
+    document.getElementById('adminLoginModal').style.display = 'none';
+}
+
+function submitAdminPassword() {
+    const password = document.getElementById('adminPasswordInput').value;
+    if (password === 'admin2026') {
+        isAdmin = true;
+        sessionStorage.setItem('isAdmin', 'true');
+        updateAdminUI();
+        showToast('Logged in as Admin. Score editing enabled!');
+        closeAdminLoginModal();
+    } else {
+        document.getElementById('adminLoginError').style.display = 'block';
+    }
+}
+
+// Call during load
+window.addEventListener('DOMContentLoaded', () => {
+    updateAdminUI();
+
+    // Submit password on Enter key
+    const passInput = document.getElementById('adminPasswordInput');
+    if (passInput) {
+        passInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') submitAdminPassword();
+        });
+    }
+
+    // Dismiss admin login modal when clicking backdrop overlay
+    const loginModal = document.getElementById('adminLoginModal');
+    if (loginModal) {
+        loginModal.addEventListener('click', (e) => {
+            if (e.target === loginModal) closeAdminLoginModal();
+        });
+    }
+});
 
 // ===== Utility Functions =====
 function toIST(utcStr) {
@@ -70,57 +139,28 @@ function getDeterministicMatchResult(matchId, homeTeam, awayTeam, isKnockout = f
 }
 
 function getMatchData(matchId) {
-    if (matchScores[matchId]) {
-        return matchScores[matchId];
-    }
-    
     const match = MATCHES.find(m => m.id === matchId);
     if (!match || match.home === 'TBD' || match.away === 'TBD') {
         return { homeScore: null, awayScore: null, status: 'scheduled', advancingTeam: null };
     }
-    
+
+    if (matchScores[matchId]) {
+        return {
+            homeScore: matchScores[matchId].homeScore,
+            awayScore: matchScores[matchId].awayScore,
+            status: matchScores[matchId].status,
+            advancingTeam: matchScores[matchId].advancingTeam
+        };
+    }
+
     const matchStart = new Date(match.dateUTC);
     const now = new Date();
-    const diffMs = now.getTime() - matchStart.getTime();
-    
-    if (diffMs < 0) {
-        return { homeScore: null, awayScore: null, status: 'scheduled', advancingTeam: null };
+    if (now >= matchStart) {
+        const isKnockout = match.stage !== 'group';
+        return getDeterministicMatchResult(matchId, match.home, match.away, isKnockout);
     }
-    
-    const elapsedMinutes = Math.floor(diffMs / (60 * 1000));
-    const isKnockout = match.stage !== 'group';
-    const finalResult = getDeterministicMatchResult(matchId, match.home, match.away, isKnockout);
-    
-    if (diffMs >= 2 * 60 * 60 * 1000) {
-        return finalResult;
-    }
-    
-    let seed = matchId * 54321;
-    function random() {
-        let x = Math.sin(seed++) * 10000;
-        return x - Math.floor(x);
-    }
-    
-    function getGoalTimes(count) {
-        const times = [];
-        for (let i = 0; i < count; i++) {
-            times.push(Math.floor(random() * 90));
-        }
-        return times.sort((a, b) => a - b);
-    }
-    
-    const homeGoalTimes = getGoalTimes(finalResult.homeScore);
-    const awayGoalTimes = getGoalTimes(finalResult.awayScore);
-    
-    const currentHomeScore = homeGoalTimes.filter(t => t <= elapsedMinutes).length;
-    const currentAwayScore = awayGoalTimes.filter(t => t <= elapsedMinutes).length;
-    
-    return {
-        homeScore: currentHomeScore,
-        awayScore: currentAwayScore,
-        status: 'live',
-        advancingTeam: null
-    };
+
+    return { homeScore: null, awayScore: null, status: 'scheduled', advancingTeam: null };
 }
 
 function getStageLabel(stage) {
@@ -141,7 +181,7 @@ setInterval(updateClock, 1000);
 updateClock();
 
 // ===== Tab Navigation =====
-document.querySelectorAll('.nav-btn').forEach(btn => {
+document.querySelectorAll('.nav-btn[data-tab]').forEach(btn => {
     btn.addEventListener('click', () => {
         document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
         document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
@@ -230,7 +270,7 @@ function renderSchedule() {
             const liveClass = data.status === 'live' ? ' live' : '';
             const liveBadge = data.status === 'live' ? '<span class="live-badge">● LIVE</span>' : '';
 
-            html += `<div class="match-card status-${statusClass}" onclick="openScoreModal(${m.id})" id="match-card-${m.id}">
+            html += `<div class="match-card status-${statusClass}" onclick="handleMatchCardClick(${m.id})" id="match-card-${m.id}">
                 <div class="match-team home">
                     <span class="team-flag">${getFlag(m.home)}</span>
                     <div>
@@ -395,22 +435,28 @@ function renderKnockout() {
             const homeWinner = data.status === 'completed' && parseInt(data.homeScore) > parseInt(data.awayScore);
             const awayWinner = data.status === 'completed' && parseInt(data.awayScore) > parseInt(data.homeScore);
 
-            html += `<div class="ko-match" onclick="openScoreModal(${m.id})" id="ko-match-${m.id}">
+            const liveKnockoutBadge = data.status === 'live' ? '<span class="live-badge" style="margin-left:8px;">● LIVE</span>' : '';
+
+            html += `<div class="ko-match" onclick="handleMatchCardClick(${m.id})" id="ko-match-${m.id}">
                 <div class="ko-match-header">
                     <span class="ko-match-id">${m.label || getStageLabel(m.stage)}</span>
-                    <span class="ko-match-time">${formatISTDateShort(m.dateUTC)} • ${formatISTTime(m.dateUTC)} IST</span>
+                    <span class="ko-match-time">${formatISTDateShort(m.dateUTC)} • ${formatISTTime(m.dateUTC)} IST ${liveKnockoutBadge}</span>
                 </div>
                 <div class="ko-team-row">
                     <div class="ko-team-info">
                         <span class="ko-team-flag">${getFlag(m.home)}</span>
-                        <span class="ko-team-name ${m.home === 'TBD' ? 'tbd' : ''} ${homeWinner ? 'ko-winner' : ''}">${m.home}</span>
+                        <div>
+                            <span class="ko-team-name ${m.home === 'TBD' ? 'tbd' : ''} ${homeWinner ? 'ko-winner' : ''}">${m.home}</span>
+                        </div>
                     </div>
                     <span class="ko-score ${homeWinner ? 'ko-winner' : ''}">${data.homeScore !== null ? data.homeScore : '-'}</span>
                 </div>
                 <div class="ko-team-row">
                     <div class="ko-team-info">
                         <span class="ko-team-flag">${getFlag(m.away)}</span>
-                        <span class="ko-team-name ${m.away === 'TBD' ? 'tbd' : ''} ${awayWinner ? 'ko-winner' : ''}">${m.away}</span>
+                        <div>
+                            <span class="ko-team-name ${m.away === 'TBD' ? 'tbd' : ''} ${awayWinner ? 'ko-winner' : ''}">${m.away}</span>
+                        </div>
                     </div>
                     <span class="ko-score ${awayWinner ? 'ko-winner' : ''}">${data.awayScore !== null ? data.awayScore : '-'}</span>
                 </div>
@@ -419,6 +465,15 @@ function renderKnockout() {
 
         container.innerHTML = html;
     });
+}
+
+function handleMatchCardClick(matchId) {
+    const match = MATCHES.find(m => m.id === matchId);
+    if (!match || match.home === 'TBD' || match.away === 'TBD') return;
+    
+    if (isAdmin) {
+        openScoreModal(matchId);
+    }
 }
 
 // ===== Score Modal =====
@@ -754,6 +809,75 @@ function computeKnockoutStage() {
     });
 }
 
+// ===== Render Statistics =====
+function renderStatistics() {
+    const teamStats = {};
+
+    Object.values(GROUPS).forEach(teams => {
+        teams.forEach(t => {
+            teamStats[t] = { name: t, gf: 0, ga: 0, played: 0 };
+        });
+    });
+
+    MATCHES.forEach(m => {
+        if (m.home === 'TBD' || m.away === 'TBD') return;
+        const data = getMatchData(m.id);
+        if (data.status === 'scheduled') return;
+
+        const homeScore = parseInt(data.homeScore) || 0;
+        const awayScore = parseInt(data.awayScore) || 0;
+
+        if (teamStats[m.home]) {
+            teamStats[m.home].gf += homeScore;
+            teamStats[m.home].ga += awayScore;
+            teamStats[m.home].played += 1;
+        }
+        if (teamStats[m.away]) {
+            teamStats[m.away].gf += awayScore;
+            teamStats[m.away].ga += homeScore;
+            teamStats[m.away].played += 1;
+        }
+    });
+
+    const attackTeams = Object.values(teamStats)
+        .filter(t => t.played > 0)
+        .sort((a, b) => b.gf - a.gf || (a.ga - b.ga) || a.name.localeCompare(b.name));
+    
+    const attackBody = document.getElementById('topAttackBody');
+    if (attackBody) {
+        if (attackTeams.length === 0) {
+            attackBody.innerHTML = `<tr><td colspan="3" style="text-align:center; color:var(--text-muted); padding: 20px;">No matches played yet.</td></tr>`;
+        } else {
+            attackBody.innerHTML = attackTeams.slice(0, 8).map((t, idx) => `
+                <tr>
+                    <td><strong>${idx + 1}</strong></td>
+                    <td>${getFlag(t.name)} ${t.name}</td>
+                    <td><strong>${t.gf}</strong></td>
+                </tr>
+            `).join('');
+        }
+    }
+
+    const defenseTeams = Object.values(teamStats)
+        .filter(t => t.played > 0)
+        .sort((a, b) => a.ga - b.ga || (b.gf - a.gf) || a.name.localeCompare(b.name));
+
+    const defenseBody = document.getElementById('bestDefenseBody');
+    if (defenseBody) {
+        if (defenseTeams.length === 0) {
+            defenseBody.innerHTML = `<tr><td colspan="3" style="text-align:center; color:var(--text-muted); padding: 20px;">No matches played yet.</td></tr>`;
+        } else {
+            defenseBody.innerHTML = defenseTeams.slice(0, 8).map((t, idx) => `
+                <tr>
+                    <td><strong>${idx + 1}</strong></td>
+                    <td>${getFlag(t.name)} ${t.name}</td>
+                    <td><strong>${t.ga}</strong></td>
+                </tr>
+            `).join('');
+        }
+    }
+}
+
 // ===== Render All =====
 function renderAll() {
     computeKnockoutStage();
@@ -762,6 +886,7 @@ function renderAll() {
     renderGroups();
     renderKnockout();
     renderReminders();
+    renderStatistics();
     updateReminderBadge();
 }
 
@@ -775,7 +900,6 @@ document.getElementById('filterTeam').addEventListener('change', renderSchedule)
 document.getElementById('scoreModal').addEventListener('click', (e) => {
     if (e.target === document.getElementById('scoreModal')) closeScoreModal();
 });
-
 // Keyboard shortcut
 document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') closeScoreModal();
